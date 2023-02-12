@@ -5,7 +5,8 @@ pragma solidity ^0.8.9;
 contract Vote {
 
     address owner;
-    constructor() {
+    constructor(){
         
+        owner = msg.sender;
     }
 }
