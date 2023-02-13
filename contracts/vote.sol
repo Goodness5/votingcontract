@@ -20,7 +20,7 @@ contract Vote {
 
     // mapping (address => uint256) public Holders;
     mapping (address => uint256) public balanceOf;
-    // mapping (address => bool) public candidatestatus;
+    mapping (address => uint256) public candidateVotes;
 
     address[] public candidates;
     address[] public Admin;
@@ -119,6 +119,7 @@ contract Vote {
             }
             require(valid, "choosen candidate not registered");
             balanceOf[_voter] -= _noOfVote;
+            candidateVotes[_candidate] += _noOfVote;
 
             burn(_noOfVote);
 
@@ -127,6 +128,21 @@ contract Vote {
 
         
     }
+
+    function startvoting() public onlyAdmin(msg.sender) {
+        
+    }
+
+    function getCandidateVotes(address _candidate) public view returns (uint256 ) {
+        for (uint i = 0; i< candidates.length; i++) {
+          _candidate = candidates[i];
+        }
+        return candidateVotes[_candidate];
+}
+
+
+
+
 
     function registerCandidate(address _candidateaddress) public onlyAdmin(_candidateaddress) returns (bool candidateregistered) {
         require(candidates.length >= 3, "maximum candidates reached");
