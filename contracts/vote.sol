@@ -18,11 +18,12 @@ contract Vote {
     uint private totalSupply;
 
 
-    mapping (address => uint256) public Holders;
+    // mapping (address => uint256) public Holders;
     mapping (address => uint256) public balanceOf;
+    // mapping (address => bool) public candidatestatus;
 
-    address[] candidates;
-    address[] Admin;
+    address[] public candidates;
+    address[] public Admin;
     // owner => spender =>  amount\\\\\\
 
     event transfer_(address indexed from, address to, uint amount);
@@ -31,7 +32,7 @@ contract Vote {
     // SAVES THE OWNER ADDRESS, TOKEN NAME, DECIMAL AND SYMBOL TO THE BYTECODE  
     constructor(string memory _name, string memory _symbol){
         owner = msg.sender;
-        Admin.push[owner];
+        Admin.push(owner);
 
         name = _name;
         symbol = _symbol;
@@ -46,8 +47,8 @@ contract Vote {
     }
      modifier onlyAdmin(address _admin) {
         bool valid;
-        for (uint256 i = 0; i < Admins.length; i++) {
-            if (_admin == Admins[i]) {
+        for (uint256 i = 0; i < Admin.length; i++) {
+            if (_admin == Admin[i]) {
                 valid = true;
                 break;
             }
@@ -84,6 +85,7 @@ contract Vote {
 
      function addAdmin(address _newAdmin) external onlyAdmin (msg.sender) {
         require(Admin.length <= 3);
+        Admin.push(_newAdmin);
        
     }
 
@@ -116,6 +118,7 @@ contract Vote {
             }
             }
             require(valid, "choosen candidate not registered");
+            balanceOf[_voter] -= _noOfVote;
 
             burn(_noOfVote);
 
@@ -125,8 +128,18 @@ contract Vote {
         
     }
 
-    function registerCandidate(address _candidateaddress) public onlyAdmin returns (bool candidateregistered) {
+    function registerCandidate(address _candidateaddress) public onlyAdmin(_candidateaddress) returns (bool candidateregistered) {
         require(candidates.length >= 3, "maximum candidates reached");
+        for (uint i = 0; i < candidates.length; i++) {
+            if (_candidateaddress == candidates[i]) {
+                candidateregistered = true;
+            }
+             }
+        require(candidateregistered = false);
+        candidates.push(_candidateaddress);
+
+    candidateregistered  = true;
+
          
     }
 
