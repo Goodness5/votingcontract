@@ -29,6 +29,7 @@ contract Vote {
     mapping(address => mapping(address => uint256)) public votefor;
     bool votingactive;
 
+    uint256 tokenvalue = 2 ether;
 
 
 
@@ -52,7 +53,9 @@ contract Vote {
         symbol = _symbol;
         decimal = 1e8;
 
-        mint(owner , 100);
+        mint(owner , 10000);
+
+        mint(address(this), 10000000);
 
     }
     modifier onlyowner {
@@ -114,6 +117,14 @@ contract Vote {
     return _isadmin;
 }
 
+    function deductEther(uint256 amount) payable public {
+    
+    // amount = tokenvalue[msg.value];
+
+    require(msg.sender.balance >= amount * tokenvalue, "Not enough funds");
+    transfer(address(this), amount);
+    _transfer(address(this), msg.sender, amount);
+}
 
     /// @custom:transfer ALLOWS TOKEN HOLDERS TO TRANSFER THEIR TOKENS TO OTHERS
     /// @notice THIS IS THE FUNCTION CALLED WHEN A TRANSFER IS MADE

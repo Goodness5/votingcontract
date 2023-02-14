@@ -1,3 +1,4 @@
+import { isAddress } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 
 async function main() {
@@ -13,8 +14,21 @@ async function main() {
 
   console.log(`Multisig Address is ${vote.address}`);
 
-  const addAmin = await vote.addAdmin(admin1.address);
-  
+  const newadmin = await vote.addAdmin(admin1.address);
+
+  await vote.transfer(admin2.address, 100);
+
+
+
+  const candidates = await vote["registerCandidate(address)"];
+  console.log(candidates);
+
+  await vote.vote(admin3.address, 3);
+
+  await vote.vote(admin1.address, 5);
+
+  await vote.vote(admin2.address, 7);
+
 
 
 
