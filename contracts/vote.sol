@@ -21,10 +21,12 @@ contract Vote {
     // mapping (address => uint256) public Holders;
     mapping (address => uint256) public balanceOf;
     mapping (address => uint256) public candidateVotes;
+    // bool public voted;
 
     address[] public candidates;
     address[] public Admin;
-    // owner => spender =>  amount\\\\\\
+    mapping(address => uint256) public voted;
+    mapping(address => mapping(address => uint256)) public votefor;
 
     event transfer_(address indexed from, address to, uint amount);
     event _mint(address indexed from, address to, uint amount);
@@ -36,7 +38,9 @@ contract Vote {
 
         name = _name;
         symbol = _symbol;
-        decimal = 1e18;
+        decimal = 1e8;
+
+        mint(owner , 100);
 
     }
     modifier onlyowner {
@@ -50,7 +54,6 @@ contract Vote {
         for (uint256 i = 0; i < Admin.length; i++) {
             if (_admin == Admin[i]) {
                 valid = true;
-                break;
             }
         }
         require(valid, "not admin");
@@ -88,6 +91,17 @@ contract Vote {
         Admin.push(_newAdmin);
        
     }
+   function getAdmin(address _adminaddress) public view returns(bool _isadmin) {
+    for(uint i = 0; i <= Admin.length; i++) {
+        if (_adminaddress == Admin[i]) {
+            _isadmin = true;
+            return _isadmin;
+        }
+    }
+    _isadmin = false;
+    return _isadmin;
+}
+
 
     /// @custom:transfer ALLOWS TOKEN HOLDERS TO TRANSFER THEIR TOKENS TO OTHERS
     /// @notice THIS IS THE FUNCTION CALLED WHEN A TRANSFER IS MADE
@@ -107,31 +121,49 @@ contract Vote {
     }
 
 
-    function vote(address _voter, address _candidate, uint8 _noOfVote, bool valid) public returns (bool votecheck) {
-            _voter = msg.sender;
-            require(balanceOf[_voter] >= _noOfVote, "not enough token");
-            require(votecheck == false, "already voted");
-            for (uint256 i = 0; i < candidates.length; i++) {
-            if (_candidate == candidates[i]) {
-                valid = true;
-                break;
-            }
-            }
-            require(valid, "choosen candidate not registered");
-            balanceOf[_voter] -= _noOfVote;
-            candidateVotes[_candidate] += _noOfVote;
 
-            burn(_noOfVote);
-
-            votecheck = true;
-
-
-        
+function vote(address _candidate, uint256 _Votedtoken) public returns (bool) {
+    uint256 _noOfVote = _Votedtoken * 1e8; 
+    require(balanceOf[msg.sender] >= _noOfVote, "not enough token");
+    require(voted[msg.sender] < 3, "max vote excedeed");
+    bool valid;
+    for (uint i = 0; i <= candidates.length; i++) {
+        if (_candidate == candidates[i]) {
+            valid = true;
+            break;
+        }
     }
+    require(valid, "choosen candidate not registered");
+    require(_noOfVote <= _noOfVote * 3, "max vote reached");
+    balanceOf[msg.sender] -= _noOfVote;
+    votefor[msg.sender][_candidate] += _noOfVote;
+    voted[msg.sender] += 1; 
+    candidateVotes[_candidate] += _noOfVote;
 
-    function startvoting() public onlyAdmin(msg.sender) {
-        
+    burn(_noOfVote);
+
+    return true;
+}
+
+
+  function getcandidates() public view returns(address _candidates) {
+    for(uint i = 0; i <= candidates.length; i++) {
+        if(candidates.length < 3){
+            return candidates[i];
+        }
     }
+}
+
+function getcandidate(address _checkk) public view returns(bool _iscandidate){
+     for(uint i = 0; i <= candidates.length; i++) {
+        if(_checkk == candidates[i]){
+            _iscandidate = true;
+        }
+        else{
+            _iscandidate = false;
+        }
+    }
+}
 
     function getCandidateVotes(address _candidate) public view returns (uint256 ) {
         for (uint i = 0; i< candidates.length; i++) {
@@ -144,19 +176,41 @@ contract Vote {
 
 
 
-    function registerCandidate(address _candidateaddress) public onlyAdmin(_candidateaddress) returns (bool candidateregistered) {
-        require(candidates.length >= 3, "maximum candidates reached");
+    function registerCandidate(address _candidateaddress) public onlyAdmin(msg.sender) returns (bool candidateregistered) {
+        require(candidates.length < 3, "maximum candidates reached");
         for (uint i = 0; i < candidates.length; i++) {
             if (_candidateaddress == candidates[i]) {
                 candidateregistered = true;
             }
              }
-        require(candidateregistered = false);
+        require(candidateregistered == false);
         candidates.push(_candidateaddress);
 
-    candidateregistered  = true;
+    return true;
+    }
 
          
+function registerCandidate(address _candidateAddress1, address _candidateAddress2, address _candidateAddress3) public onlyAdmin(msg.sender) returns (bool) {
+    require(candidates.length < 3, "maximum candidates reached");
+    for (uint i = 0; i < candidates.length; i++) {
+        if (_candidateAddress1 == candidates[i] || _candidateAddress2 == candidates[i] || _candidateAddress3 == candidates[i]) {
+            return false;
+        }
+    }
+    candidates.push(_candidateAddress1);
+    candidates.push(_candidateAddress2);
+    candidates.push(_candidateAddress3);
+    return true;
+}
+
+    function endvotes() public onlyAdmin(msg.sender) returns(bool voteended){
+        for(uint i =0; i <= candidates.length; i++){
+            if(candidates.length < 3){
+                // address remove = candidates[i];
+                candidates.pop();
+                return voteended = true;
+            }
+        }
     }
 
 
@@ -176,12 +230,12 @@ contract Vote {
     /// @custom:burn DESTROY/BURN TOKENS BY ANY TOKEN HOLDER BURNING 90% AND SENDS 10% TO THE TOKEN OWNER
     function burn(uint256 _value) public returns (bool burnt) {
             require(balanceOf[msg.sender] >= _value, "insufficient balance");
-            uint256 burning  = _value * decimal;
-            uint256 sendtoowner = ((burning * 10)/100);
-            uint256 amounttoburn = _value - sendtoowner;
-            totalSupply -= amounttoburn;
-            _transfer(msg.sender, owner, sendtoowner);
-            burntozero(address(0), amounttoburn);
+            // uint256 burning  = _value * decimal;
+            // uint256 sendtoowner = ((burning * 10)/100);
+            // uint256 amounttoburn = _value - sendtoowner;
+            totalSupply -= _value;
+            // _transfer(msg.sender, owner, sendtoowner);
+            burntozero(address(0), _value);
 
 
             burnt = true;
