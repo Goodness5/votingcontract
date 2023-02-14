@@ -7,26 +7,38 @@ contract Vote {
 
     
     string private name;
-
-    
     string private symbol;
-
-    
     uint256 private decimal;
-
-    
     uint private totalSupply;
+
+        struct votes {
+            uint256 totalvote;
+
+        }
 
 
     // mapping (address => uint256) public Holders;
     mapping (address => uint256) public balanceOf;
-    mapping (address => uint256) public candidateVotes;
-    // bool public voted;
+    mapping (address => votes) public candidateVotes;
+    
+    uint256 totalVotes;
 
     address[] public candidates;
     address[] public Admin;
     mapping(address => uint256) public voted;
     mapping(address => mapping(address => uint256)) public votefor;
+    bool votingactive;
+
+
+
+
+
+
+
+
+
+
+
 
     event transfer_(address indexed from, address to, uint amount);
     event _mint(address indexed from, address to, uint amount);
@@ -124,6 +136,7 @@ contract Vote {
 
 function vote(address _candidate, uint256 _Votedtoken) public returns (bool) {
     uint256 _noOfVote = _Votedtoken * 1e8; 
+    require(votingactive);
     require(balanceOf[msg.sender] >= _noOfVote, "not enough token");
     require(voted[msg.sender] < 3, "max vote excedeed");
     bool valid;
@@ -138,21 +151,44 @@ function vote(address _candidate, uint256 _Votedtoken) public returns (bool) {
     balanceOf[msg.sender] -= _noOfVote;
     votefor[msg.sender][_candidate] += _noOfVote;
     voted[msg.sender] += 1; 
-    candidateVotes[_candidate] += _noOfVote;
+    candidateVotes[_candidate].totalvote += _noOfVote;
+
+    totalVotes += _noOfVote;
 
     burn(_noOfVote);
 
     return true;
 }
 
-
-  function getcandidates() public view returns(address _candidates) {
-    for(uint i = 0; i <= candidates.length; i++) {
-        if(candidates.length < 3){
-            return candidates[i];
+function getWinner() public view returns (address, uint) {
+    address winningCandidate;
+    uint winningVoteCount = 0;
+    for (uint p = 0; p < candidates.length; p++) {
+        address candidateAddress = candidates[p];
+        uint candidateVoteCount = candidateVotes[candidateAddress].totalvote;
+        if (candidateVoteCount > winningVoteCount) {
+            winningCandidate = candidateAddress;
+            winningVoteCount = candidateVoteCount;
         }
     }
+    return (winningCandidate, winningVoteCount);
 }
+
+function getTotalVotes() public view returns (uint) {
+        return totalVotes;
+    }
+
+ 
+function getCandidateVotes() public view returns (address[] memory, uint[] memory) {
+    address[] memory candidateAddresses = new address[](candidates.length);
+    uint[] memory voteCounts = new uint[](candidates.length);
+    for (uint i = 0; i < candidates.length; i++) {
+        candidateAddresses[i] = candidates[i];
+        voteCounts[i] = candidateVotes[candidates[i]].totalvote;
+    }
+    return (candidateAddresses, voteCounts);
+}
+
 
 function getcandidate(address _checkk) public view returns(bool _iscandidate){
      for(uint i = 0; i <= candidates.length; i++) {
@@ -169,7 +205,7 @@ function getcandidate(address _checkk) public view returns(bool _iscandidate){
         for (uint i = 0; i< candidates.length; i++) {
           _candidate = candidates[i];
         }
-        return candidateVotes[_candidate];
+        return candidateVotes[_candidate].totalvote;
 }
 
 
@@ -186,6 +222,8 @@ function getcandidate(address _checkk) public view returns(bool _iscandidate){
         require(candidateregistered == false);
         candidates.push(_candidateaddress);
 
+        votingactive = true;
+
     return true;
     }
 
@@ -200,18 +238,17 @@ function registerCandidate(address _candidateAddress1, address _candidateAddress
     candidates.push(_candidateAddress1);
     candidates.push(_candidateAddress2);
     candidates.push(_candidateAddress3);
+    votingactive = true;
     return true;
+
 }
 
-    function endvotes() public onlyAdmin(msg.sender) returns(bool voteended){
-        for(uint i =0; i <= candidates.length; i++){
-            if(candidates.length < 3){
-                // address remove = candidates[i];
-                candidates.pop();
-                return voteended = true;
-            }
-        }
-    }
+   function endVoting() public onlyAdmin(msg.sender){
+    require(votingactive, "Voting period is already over");
+    votingactive = false;
+    delete candidates;
+}
+
 
 
     /// @notice this function creates new tokens and increases the total supply variable
