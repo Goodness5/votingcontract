@@ -11,3 +11,7 @@ REPORT_GAS=true npx hardhat test
 npx hardhat node
 npx hardhat run scripts/deploy.ts
 ```
+
+
+
+contract deployed at https://goerli.etherscan.io/address/0x12d77b8ea61863e478aa6b766f489af5f7a95aa7
